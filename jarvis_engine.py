@@ -1,55 +1,70 @@
-# def jarvis_answer(question):
-#     q = question.lower()
-
-#     if "after 12th science" in q:
-#         return (
-#             "After 12th science, students can choose Engineering, Medical, "
-#             "Pure Sciences, Research, or emerging fields like AI and Data Science. "
-#             "The decision should depend on interest and entrance exam score."
-#         )
-
-#     elif "engineering branches" in q or "branches" in q:
-#         return (
-#             "Popular engineering branches include CSE, AI & DS, Mechanical, "
-#             "Electrical, and Electronics. Coding-oriented students usually prefer CSE or AI."
-#         )
-
-#     elif "career" in q:
-#         return (
-#             "Career selection should be based on interest, aptitude, "
-#             "exam performance, and long-term goals."
-#         )
-
-#     elif "college" in q:
-#         return (
-#             "Choosing a college depends on branch cutoff, location, "
-#             "college reputation, and placement records."
-#         )
-
-#     else:
-#         return (
-#             "I am a basic career guidance bot. "
-#             "Please ask questions related to careers, exams, or engineering branches."
-#         )
 import os
-
 from dotenv import load_dotenv
 from groq import Groq
 
 load_dotenv()
 
-client = Groq(
-    api_key=os.getenv("GROQ_API_KEY")
-)
 
-chat_completion = client.chat.completions.create(
-    model="openai/gpt-oss-20b",
-    messages=[
-        {
-            "role": "user",
-            "content": "Explain how AI works in a few words"
-        }
-    ]
-)
+SYSTEM_PROMPT = """
+You are Jarvis, the AI career guidance assistant for College Adda.
 
-print(chat_completion.choices[0].message.content)
+College Adda helps 12th-grade science students understand:
+- Engineering career options
+- Engineering branches
+- JEE and MHT-CET
+- College and branch selection
+- Skills required for different careers
+- AI, Data Science, CSE, Mechanical, Electronics, Electrical and related fields
+- College life and learning roadmaps
+
+Your job is to give practical, student-friendly guidance.
+
+Rules:
+1. Keep answers clear and easy to understand.
+2. Prefer practical advice over generic motivational statements.
+3. Explain technical terms when necessary.
+4. Do not invent college cutoffs, rankings, fees, placement numbers, or admission rules.
+5. For current cutoff/admission information, clearly say that official counselling sources should be checked.
+6. Do not guarantee admission, placement, salary, or career success.
+7. When comparing engineering branches, explain differences in subjects, coding requirements, career paths, and skills.
+8. When a student asks what they should choose, explain the factors they should consider instead of blindly deciding for them.
+9. Focus on Indian engineering education, especially Maharashtra/JEE/MHT-CET context.
+10. Keep the answer concise unless the student asks for a detailed explanation.
+"""
+
+
+def jarvis_answer(question: str) -> str:
+    """Return a College Adda career-guidance response."""
+
+    api_key = os.getenv("GROQ_API_KEY")
+
+    if not api_key:
+        return "GROQ_API_KEY is missing. Please check your .env file."
+
+    if not question.strip():
+        return "Please enter a question."
+
+    try:
+        client = Groq(api_key=api_key)
+
+        response = client.chat.completions.create(
+            model="openai/gpt-oss-20b",
+            messages=[
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": question.strip(),
+                },
+            ],
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as exc:
+        return (
+            "Sorry, Jarvis is temporarily unavailable.\n"
+            f"Error: {exc}"
+        )
